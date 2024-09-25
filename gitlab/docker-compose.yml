@@ -1,0 +1,90 @@
+services:
+  gitlab:
+    image: 'gitlab/gitlab-ce:latest'
+    container_name: gitlab
+    restart: always
+    networks:
+      - back-tier
+      - front-tier
+      - runners
+    ports:
+      - "80:80"
+      - "2222:22"
+    environment:
+      DEBUG: 'false'
+      GITLAB_OMNIBUS_CONFIG: 'external_url "http://gitlab"'
+    configs:
+      - source: gitlab_rb
+        target: /etc/gitlab/gitlab.rb
+    secrets:
+      - gitlab-root-password
+      - postgres-password
+    volumes:
+      - ./state/gitlab/config:/etc/gitlab
+      - ./state/gitlab/logs:/var/log/gitlab
+      - ./state/gitlab/data:/var/opt/gitlab
+    depends_on:
+      - redis
+      - postgres
+
+  redis:
+    image: 'redis:alpine'
+    container_name: redis
+    restart: always
+    networks:
+      - back-tier
+
+  postgres:
+    image: 'postgres:latest'
+    container_name: postgres
+    restart: always
+    networks:
+      - back-tier
+    environment:
+      POSTGRES_USER: 'gitlab'
+      POSTGRES_PASSWORD_FILE: '/run/secrets/postgres-password'
+      POSTGRES_NAME: 'gitlab'
+    secrets:
+      - postgres-password
+    volumes:
+      - ./state/postgres/data:/var/lib/postgresql/data
+
+  runner:
+    image: 'gitlab/gitlab-runner'
+    container_name: gitlab-runner
+    build:
+      # we need docker accessible by gitlab-runner, but can't
+      # change socket perms or use docker-rootles.
+      # using sudo is probably the simplest way to achieve that.
+      dockerfile_inline: |
+        FROM 'gitlab/gitlab-runner:alpine'
+        RUN apk add docker sudo
+        RUN echo 'gitlab-runner ALL=(ALL) NOPASSWD: /usr/bin/docker-bin build .' > /etc/sudoers
+        RUN mv /usr/bin/docker /usr/bin/docker-bin
+        RUN install --mode +x <(echo -e '#!/bin/sh\nsudo /usr/bin/docker-bin "$@"') /usr/bin/docker
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./state/runner/config:/etc/gitlab-runner
+    networks:
+      - runners
+    depends_on:
+      - gitlab
+
+secrets:
+  postgres-password:
+    file: ../secrets/postgres-password
+  gitlab-root-password:
+    file: ../secrets/gitlab-root-password
+
+networks:
+  back-tier:
+    driver: bridge
+  front-tier:
+    driver: bridge
+  runners:
+    driver: bridge
+
+configs:
+  gitlab_rb:
+    file: ./gitlab.rb

@@ -3,6 +3,8 @@ gitlab_rails['initial_root_password'] = File.read('/run/secrets/gitlab-root-pass
 gitlab_shell['log_level'] = 'WARN'
 
 # EXTRA FEATURES
+puma['worker_processes'] = 0
+sidekiq['concurrency'] = 5
 gitlab_rails['smtp_enable'] = false
 gitlab_rails['gitlab_email_enabled'] = false
 gitlab_rails['gitlab_username_changing_enabled'] = false
@@ -24,6 +26,23 @@ gitlab_rails['usage_ping_enabled'] = false
 gitlab_rails['omniauth_enabled'] = false
 gitlab_rails['manage_backup_path'] = true
 gitlab_rails['backup_path'] = "/var/opt/gitlab/backups"
+
+# GITALY
+gitaly['configuration'] = {
+    concurrency: [
+      {
+        'rpc' => "/gitaly.SmartHTTPService/PostReceivePack",
+        'max_per_repo' => 2,
+      }, {
+        'rpc' => "/gitaly.SSHService/SSHUploadPack",
+        'max_per_repo' => 2,
+      },
+    ],
+}
+
+gitaly['env'] = {
+  'GITALY_COMMAND_SPAWN_MAX_PARALLEL' => '1'
+}
 
 # NGINX
 nginx['enable'] = true
@@ -58,3 +77,12 @@ prometheus['enable'] = false
 prometheus['monitor_kubernetes'] = false
 alertmanager['enable'] = false
 prometheus_monitoring['enable'] = false
+
+# OPTIMISATIONS
+gitlab_rails['env'] = {
+  'MALLOC_CONF' => 'dirty_decay_ms:5000,muzzy_decay_ms:5000'
+}
+
+gitaly['env'] = {
+  'MALLOC_CONF' => 'dirty_decay_ms:5000,muzzy_decay_ms:5000'
+}

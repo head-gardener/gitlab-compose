@@ -1,5 +1,6 @@
 gitlab_rails['gitlab_default_theme'] = 2
 gitlab_rails['initial_root_password'] = File.read('/run/secrets/gitlab-root-password')
+gitlab_shell['log_level'] = 'WARN'
 
 # EXTRA FEATURES
 gitlab_rails['smtp_enable'] = false
@@ -52,74 +53,23 @@ gitlab_rails['redis_tls_ca_cert_file'] = '/opt/gitlab/embedded/ssl/certs/cacert.
 gitlab_rails['redis_tls_client_cert_file'] = nil
 gitlab_rails['redis_tls_client_key_file'] = nil
 
-################################################################################
-## Container Registry settings
-##! Docs: https://docs.gitlab.com/ee/administration/packages/container_registry.html
-################################################################################
+# REGISTRY
+registry_external_url 'http://gitlab'
+gitlab_rails['registry_enabled'] = true
+gitlab_rails['registry_host'] = "gitlab"
+gitlab_rails['registry_port'] = "5000"
+gitlab_rails['registry_path'] = "/var/opt/gitlab/gitlab-rails/shared/registry"
+registry['enable'] = true
+registry['username'] = "registry"
+registry['group'] = "registry"
+registry['dir'] = "/var/opt/gitlab/registry"
+registry['registry_http_addr'] = "0.0.0.0:5000"
+registry['debug_addr'] = "localhost:5001"
+registry['log_directory'] = "/var/log/gitlab/registry"
+registry['log_level'] = "warn"
+registry['log_formatter'] = "json"
 
-# registry_external_url 'https://registry.example.com'
-
-### Settings used by GitLab application
-# gitlab_rails['registry_enabled'] = true
-# gitlab_rails['registry_host'] = "registry.gitlab.example.com"
-# gitlab_rails['registry_port'] = "5005"
-# gitlab_rails['registry_path'] = "/var/opt/gitlab/gitlab-rails/shared/registry"
-
-# Notification secret, it's used to authenticate notification requests to GitLab application
-# You only need to change this when you use external Registry service, otherwise
-# it will be taken directly from notification settings of your Registry
-# gitlab_rails['registry_notification_secret'] = nil
-
-###! **Do not change the following 3 settings unless you know what you are
-###!   doing**
-# gitlab_rails['registry_api_url'] = "http://127.0.0.1:5000"
-# gitlab_rails['registry_key_path'] = "/var/opt/gitlab/gitlab-rails/certificate.key"
-# gitlab_rails['registry_issuer'] = "omnibus-gitlab-issuer"
-
-### Settings used by Registry application
-# registry['enable'] = true
-# registry['username'] = "registry"
-# registry['group'] = "registry"
-# registry['uid'] = nil
-# registry['gid'] = nil
-# registry['dir'] = "/var/opt/gitlab/registry"
-# registry['registry_http_addr'] = "127.0.0.1:5000"
-# registry['debug_addr'] = "localhost:5001"
-# registry['log_directory'] = "/var/log/gitlab/registry"
-# registry['env_directory'] = "/opt/gitlab/etc/registry/env"
-# registry['env'] = {
-#   'SSL_CERT_DIR' => "/opt/gitlab/embedded/ssl/certs/"
-# }
-# registry['log_level'] = "info"
-# registry['log_formatter'] = "text"
-# registry['rootcertbundle'] = "/var/opt/gitlab/registry/certificate.crt"
-# registry['health_storagedriver_enabled'] = true
-# registry['middleware'] = nil
-# registry['storage_delete_enabled'] = true
-# registry['validation_enabled'] = false
-# registry['autoredirect'] = false
-# registry['compatibility_schema1_enabled'] = false
-# registry['database'] = nil
-
-gitlab_shell['log_level'] = 'WARN'
-
-################################################################################
-## Registry NGINX
-################################################################################
-
-# All the settings defined in the "GitLab Nginx" section are also available in
-# this "Registry NGINX" section, using the key `registry_nginx`.  However, those
-# settings should be explicitly set. That is, settings given as
-# `nginx['some_setting']` WILL NOT be automatically replicated as
-# `registry_nginx['some_setting']` and should be set separately.
-
-# Below you can find settings that are exclusive to "Registry NGINX"
-# registry_nginx['enable'] = false
-
-# When the registry is automatically enabled using the same domain as `external_url`,
-# it listens on this port
-# registry_nginx['listen_port'] = 5050
-
+# PROMETHEUS
 prometheus['enable'] = false
 prometheus['monitor_kubernetes'] = false
 alertmanager['enable'] = false

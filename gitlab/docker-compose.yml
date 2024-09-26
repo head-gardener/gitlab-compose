@@ -9,6 +9,7 @@ services:
       - runners
     ports:
       - "80:80"
+      - "5000:5000"
       - "2222:22"
     environment:
       DEBUG: 'false'
@@ -59,7 +60,7 @@ services:
       dockerfile_inline: |
         FROM 'gitlab/gitlab-runner:alpine'
         RUN apk add docker sudo
-        RUN echo 'gitlab-runner ALL=(ALL) NOPASSWD: /usr/bin/docker-bin build .' > /etc/sudoers
+        RUN echo 'gitlab-runner ALL=(ALL) NOPASSWD: /usr/bin/docker-bin' > /etc/sudoers
         RUN mv /usr/bin/docker /usr/bin/docker-bin
         RUN install --mode +x <(echo -e '#!/bin/sh\nsudo /usr/bin/docker-bin "$@"') /usr/bin/docker
     restart: always

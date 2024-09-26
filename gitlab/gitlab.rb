@@ -15,9 +15,6 @@ gitlab_rails['gitlab_default_projects_features_container_registry'] = true
 gitlab_rails['trusted_proxies'] = []
 gitlab_rails['shutdown_blackout_seconds'] = 10
 gitlab_rails['incoming_email_enabled'] = false
-postgresql['enable'] = false
-redis['enable'] = false
-nginx['enable'] = true
 gitlab_pages['enable'] = false
 gitlab_kas['enable'] = false
 mattermost['enable'] = false
@@ -28,30 +25,17 @@ gitlab_rails['omniauth_enabled'] = false
 gitlab_rails['manage_backup_path'] = true
 gitlab_rails['backup_path'] = "/var/opt/gitlab/backups"
 
+# NGINX
+nginx['enable'] = true
+
 # POSTGRESQL
-gitlab_rails['db_adapter'] = "postgresql"
-gitlab_rails['db_database'] = "gitlab"
-gitlab_rails['db_username'] = "gitlab"
-gitlab_rails['db_password'] = File.read('/run/secrets/postgres-password')
-gitlab_rails['db_host'] = "postgres"
-gitlab_rails['db_port'] = 5432
-gitlab_rails['db_sslmode'] = nil
-gitlab_rails['db_sslcompression'] = 0
-gitlab_rails['db_sslrootcert'] = nil
-gitlab_rails['db_sslcert'] = nil
-gitlab_rails['db_sslkey'] = nil
+postgresql['enable'] = true
 
 # REDIS
-gitlab_rails['redis_host'] = "redis"
-gitlab_rails['redis_port'] = 6379
-gitlab_rails['redis_ssl'] = false
-gitlab_rails['redis_password'] = nil
-gitlab_rails['redis_database'] = 0
-gitlab_rails['redis_enable_client'] = true
-gitlab_rails['redis_tls_ca_cert_dir'] = '/opt/gitlab/embedded/ssl/certs/'
-gitlab_rails['redis_tls_ca_cert_file'] = '/opt/gitlab/embedded/ssl/certs/cacert.pem'
-gitlab_rails['redis_tls_client_cert_file'] = nil
-gitlab_rails['redis_tls_client_key_file'] = nil
+redis['enable'] = true
+redis['enable_client'] = false
+redis['client_max_memory'] = '256mb'
+redis['maxmemory_policy'] = 'allkeys-lru'
 
 # REGISTRY
 registry_external_url 'http://gitlab'

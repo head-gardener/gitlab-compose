@@ -1,1 +1,3 @@
 gitlab/state
+infra/*terraform*
+gitlab/*terraform*

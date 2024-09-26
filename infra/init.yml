@@ -1,0 +1,96 @@
+---
+- name: Init ZRAM
+  hosts: all
+  tags: zram
+
+  tasks:
+    - name: Install ZRAM generator
+      apt:
+        name: "systemd-zram-generator"
+        state: present
+
+    - name: Configure ZRAM
+      copy:
+        src: ./conf/zram-generator.conf
+        dest: /etc/systemd/zram-generator.conf
+
+    - name: Start ZRAM
+      ansible.builtin.systemd_service:
+        name: "/dev/zram0"
+        state: started
+
+    - name: Verify ZRAM
+      shell: zramctl | grep zram0
+
+- name: Init Swap File
+  hosts: all
+  tags: swap
+  vars:
+    swap_size: 5120
+    swap_path: /swapfile
+
+  tasks:
+    - name: Create swap file
+      command: dd if=/dev/zero of={{ swap_path }} bs=1M count={{ swap_size }}
+
+    - name: Set permissions for swap file
+      command: chmod 600 {{ swap_path }}
+
+    - name: Make swap file
+      command: mkswap {{ swap_path }}
+
+    - name: Activate swap file
+      command: swapon {{ swap_path }}
+
+    - name: Add swap file to fstab
+      lineinfile:
+        line: "{{ swap_path }} none swap sw 0 0"
+        path: /etc/fstab
+
+    - name: Verify swap space
+      shell: free -h | grep Swap
+
+- name: Configure UFW
+  hosts: all
+  tags: ufw
+
+  tasks:
+    - name: Allow HTTP
+      command: ufw allow 80/tcp
+
+    - name: Allow Docker Registry
+      command: ufw allow 5000/tcp
+
+    - name: Deny Docker API
+      command: ufw delete allow 2375/tcp
+
+    - name: Deny Docker API (ssl)
+      command: ufw delete allow 2376/tcp
+
+- name: Start GitLab
+  hosts: all
+  tags: gitlab
+
+  tasks:
+    - name: Copy defenitions
+      copy:
+        src: ../gitlab/docker-compose.yml
+        dest: /srv/gitlab/gitlab/
+        directory_mode: '700'
+
+    - name: Copy config
+      copy:
+        src: ../gitlab/gitlab.rb
+        dest: /srv/gitlab/gitlab/
+
+    - name: Copy secrets
+      copy:
+        src: ../secrets/
+        dest: /srv/gitlab/secrets/
+        owner: root
+        mode: '400'
+
+    - name: Start GitLab
+      command:
+        cmd: docker compose up --build -d
+        chdir: /srv/gitlab/gitlab
